@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+- Installation docs create a virtual environment in `mcp/review-hub/.venv`, and `Setup-Environment.ps1` prefers its Python for `review-hub`, warning when the selected interpreter lacks the `mcp` package.
+- README documents that `Setup-Environment.ps1` rewrites `~/.claude/CLAUDE.md`, so existing instructions belong in an overlay.
+
+### Fixed
+- `Setup-Environment.ps1` registers `review-hub` in the root `mcpServers` of `~/.claude.json`; it used to insert it into the first project-scoped `mcpServers`, making the server available in a single folder only.
+- `Setup-Environment.ps1` registers `review-hub` when `~/.gemini/config/mcp_config.json` exists but is empty.
+- `Setup-Environment.ps1` moves legacy `gustavo-*` skill folders to `skills-legacy-backup/<timestamp>` instead of deleting them permanently.
+
 ## [0.1.0] - 2026-11-24
 
 First public-ready release.
@@ -25,4 +36,5 @@ First public-ready release.
 - `review-hub` no longer resets the thread silently when the JSON file is corrupted; it raises an error and leaves the file untouched.
 - `mcp` is pinned to `1.30.0`: the previous `mcp>=1.0.0` installed 2.x, where `FastMCP` was renamed, breaking fresh installs.
 
+[Unreleased]: https://github.com/Gustavo-Piccoli/Gap.AI-Toolkit/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/Gustavo-Piccoli/Gap.AI-Toolkit/releases/tag/v0.1.0

@@ -6,14 +6,17 @@
 .DESCRIPTION
     Script idempotente compativel com Windows PowerShell 5.1+ que realiza:
       1. Instalacao do Git hook local (.git/hooks/pre-commit) no repositorio Gap.AI-Toolkit.
-      2. Remocao segura de skills legadas (gustavo-*) e de Junctions gap-* orfas (destino removido ou renomeado),
+      2. Remocao segura de skills legadas (gustavo-*: Junctions sao removidas, pastas reais sao movidas para
+         <raiz>\skills-legacy-backup\<data-hora>) e de Junctions gap-* orfas (destino removido ou renomeado),
          e criacao de Junctions para todas as skills (gap-*) em ~/.claude/skills, ~/.agents/skills e
          ~/.gemini/config/skills.
       3. Geracao do arquivo global ~/.claude/CLAUDE.md importando rules/AGENTS.md e overlays locais/corporativos
          (ex.: ~/.claude/CLAUDE.*.md) quando presentes na maquina.
       4. Sincronizacao do plugin global user-preferences do Google Antigravity (~/.gemini/config/plugins/user-preferences).
-      5. Atualizacao cirurgica do servidor MCP review-hub em ~/.gemini/config/mcp_config.json e ~/.claude.json
-         em UTF-8 sem BOM, preservando integralmente todas as demais configuracoes existentes.
+      5. Atualizacao cirurgica do servidor MCP review-hub no objeto mcpServers da RAIZ de
+         ~/.gemini/config/mcp_config.json e ~/.claude.json (nunca nos mcpServers por projeto), em UTF-8 sem BOM,
+         preservando integralmente todas as demais configuracoes existentes. O Python preferido e o da venv
+         mcp/review-hub/.venv, quando existir.
 #>
 [CmdletBinding()]
 param(
@@ -33,6 +36,7 @@ if ([string]::IsNullOrWhiteSpace($ToolkitRoot)) {
 }
 $ToolkitRoot = (Resolve-Path -LiteralPath $ToolkitRoot).Path.TrimEnd('\', '/')
 $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+$runTimestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 
 Write-Host "=== Gap.AI-Toolkit :: Setup-Environment ===" -ForegroundColor Cyan
 Write-Host "ToolkitRoot: $ToolkitRoot" -ForegroundColor Gray
@@ -88,9 +92,18 @@ function Set-DirectoryJunction {
 function Resolve-PythonExecutable {
     param(
         [Parameter(Mandatory = $true)]
+        [string]$VenvPython,
+
+        [Parameter(Mandatory = $true)]
         [string[]]$ConfigFiles
     )
 
+    # 1. Venv do review-hub (mcp/review-hub/.venv), onde o pacote mcp foi instalado.
+    if (Test-Path -LiteralPath $VenvPython) {
+        return $VenvPython
+    }
+
+    # 2. Python ja configurado anteriormente para o review-hub.
     $reviewHubBlockPattern = '(?s)"review-hub"\s*:\s*\{(?:[^{}]|\{[^{}]*\})*\}'
     $commandPattern = '"command"\s*:\s*"([^"]+)"'
 
@@ -110,12 +123,146 @@ function Resolve-PythonExecutable {
         }
     }
 
+    # 3. Python do PATH.
     $pyCmd = Get-Command python -ErrorAction SilentlyContinue
     if ($null -ne $pyCmd -and -not [string]::IsNullOrWhiteSpace($pyCmd.Source)) {
         return $pyCmd.Source
     }
 
     return "python"
+}
+
+function Test-PythonHasMcpPackage {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$PythonExe
+    )
+
+    # Roda fora do repositorio: a pasta mcp/ da raiz seria importada como pacote e mascararia a ausencia do mcp.
+    Push-Location -LiteralPath ([System.IO.Path]::GetTempPath())
+    try {
+        $ErrorActionPreference = 'Continue'
+        $null = & $PythonExe -c "import mcp.server.fastmcp" 2>$null
+        return ($LASTEXITCODE -eq 0)
+    }
+    catch {
+        return $false
+    }
+    finally {
+        Pop-Location
+    }
+}
+
+function Get-JsonValueEnd {
+    # Devolve o indice logo apos o valor JSON que comeca em $Start (objeto, array, string ou literal).
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Text,
+
+        [Parameter(Mandatory = $true)]
+        [int]$Start
+    )
+
+    $stringStops = [char[]]'"\'
+    $structural = [char[]]'"{}[]'
+    $first = $Text[$Start]
+
+    if ($first -eq '"') {
+        $i = $Start + 1
+        while ($true) {
+            $i = $Text.IndexOfAny($stringStops, $i)
+            if ($i -lt 0) { throw 'JSON malformado: string sem fechamento.' }
+            if ($Text[$i] -eq '\') { $i += 2; continue }
+            return $i + 1
+        }
+    }
+
+    if ($first -eq '{' -or $first -eq '[') {
+        $depth = 0
+        $i = $Start
+        while ($true) {
+            $i = $Text.IndexOfAny($structural, $i)
+            if ($i -lt 0) { throw 'JSON malformado: objeto ou array sem fechamento.' }
+            $ch = $Text[$i]
+            if ($ch -eq '"') {
+                $i = Get-JsonValueEnd -Text $Text -Start $i
+                continue
+            }
+            if ($ch -eq '{' -or $ch -eq '[') { $depth++ }
+            else {
+                $depth--
+                if ($depth -eq 0) { return $i + 1 }
+            }
+            $i++
+        }
+    }
+
+    $i = $Start
+    while ($i -lt $Text.Length -and ',}]'.IndexOf($Text[$i]) -lt 0 -and -not [char]::IsWhiteSpace($Text[$i])) {
+        $i++
+    }
+    return $i
+}
+
+function Find-JsonObjectMember {
+    # Procura um membro DIRETO do objeto que comeca em $ObjectStart ('{'), ignorando objetos aninhados.
+    # Devolve [pscustomobject]@{ ValueStart; ValueEnd } ou $null.
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Text,
+
+        [Parameter(Mandatory = $true)]
+        [int]$ObjectStart,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Key
+    )
+
+    $structural = [char[]]'"{}[]'
+    $depth = 0
+    $i = $ObjectStart
+    while ($true) {
+        $i = $Text.IndexOfAny($structural, $i)
+        if ($i -lt 0) { throw 'JSON malformado: objeto sem fechamento.' }
+        $ch = $Text[$i]
+
+        if ($ch -eq '"') {
+            $end = Get-JsonValueEnd -Text $Text -Start $i
+            if ($depth -eq 1) {
+                $j = $end
+                while ($j -lt $Text.Length -and [char]::IsWhiteSpace($Text[$j])) { $j++ }
+                if ($j -lt $Text.Length -and $Text[$j] -eq ':' -and $Text.Substring($i + 1, $end - $i - 2) -ceq $Key) {
+                    $v = $j + 1
+                    while ($v -lt $Text.Length -and [char]::IsWhiteSpace($Text[$v])) { $v++ }
+                    return [pscustomobject]@{ ValueStart = $v; ValueEnd = (Get-JsonValueEnd -Text $Text -Start $v) }
+                }
+            }
+            $i = $end
+            continue
+        }
+
+        if ($ch -eq '{' -or $ch -eq '[') { $depth++ }
+        else {
+            $depth--
+            if ($depth -eq 0) { return $null }
+        }
+        $i++
+    }
+}
+
+function Test-JsonContainerIsEmpty {
+    # $true quando o objeto/array que comeca em $Start nao tem nenhum membro ({} ou []).
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Text,
+
+        [Parameter(Mandatory = $true)]
+        [int]$Start
+    )
+
+    $j = $Start + 1
+    while ($j -lt $Text.Length -and [char]::IsWhiteSpace($Text[$j])) { $j++ }
+    return ($j -lt $Text.Length -and ($Text[$j] -eq '}' -or $Text[$j] -eq ']'))
 }
 
 function Update-ReviewHubMcpInJsonFile {
@@ -136,8 +283,12 @@ function Update-ReviewHubMcpInJsonFile {
     $pyEscaped = $PythonExe.Replace('\', '\\')
     $scriptEscaped = $ReviewHubScriptPath.Replace('\', '\\')
 
-    if (-not (Test-Path -LiteralPath $JsonFilePath)) {
-        if (-not $CreateIfMissing) {
+    $fileExists = Test-Path -LiteralPath $JsonFilePath
+    $raw = if ($fileExists) { [System.IO.File]::ReadAllText($JsonFilePath, [System.Text.Encoding]::UTF8) } else { '' }
+
+    # Arquivo ausente ou vazio: cria um JSON novo so com o review-hub.
+    if ([string]::IsNullOrWhiteSpace($raw)) {
+        if (-not $fileExists -and -not $CreateIfMissing) {
             return $false
         }
 
@@ -163,32 +314,52 @@ function Update-ReviewHubMcpInJsonFile {
         return $true
     }
 
-    $raw = [System.IO.File]::ReadAllText($JsonFilePath, [System.Text.Encoding]::UTF8)
-    $blockPattern = '(?s)("review-hub"\s*:\s*\{(?:[^{}]|\{[^{}]*\})*\})'
-
-    if ([regex]::IsMatch($raw, $blockPattern)) {
-        $updated = [regex]::Replace($raw, $blockPattern, {
-            param($m)
-            $block = $m.Value
-            $block = [regex]::Replace($block, '("command"\s*:\s*)"[^"]*"', "`${1}`"$pyEscaped`"")
-            $block = [regex]::Replace($block, '("args"\s*:\s*\[\s*)"[^"]*"(\s*\])', "`${1}`"$scriptEscaped`"`${2}")
-            return $block
-        })
+    # So o mcpServers da RAIZ e considerado: o ~/.claude.json tambem tem mcpServers dentro de cada projeto,
+    # e gravar num deles deixaria o review-hub disponivel apenas naquela pasta.
+    $rootStart = $raw.IndexOf('{')
+    if ($rootStart -lt 0) {
+        Write-Warning "Conteudo inesperado em '$JsonFilePath' (sem objeto JSON na raiz); review-hub nao registrado."
+        return $false
     }
-    elseif ([regex]::IsMatch($raw, '"mcpServers"\s*:\s*\{')) {
-        $insertion = @"
-"mcpServers": {
-    "review-hub": {
-      "command": "$pyEscaped",
-      "args": [
-        "$scriptEscaped"
-      ]
-    },
-"@
-        $updated = [regex]::Replace($raw, '"mcpServers"\s*:\s*\{', $insertion, 1)
+
+    $nl = if ($raw.Contains("`r`n")) { "`r`n" } else { "`n" }
+    $hubEntry = @(
+        '    "review-hub": {',
+        "      `"command`": `"$pyEscaped`",",
+        '      "args": [',
+        "        `"$scriptEscaped`"",
+        '      ]',
+        '    }'
+    ) -join $nl
+
+    $servers = Find-JsonObjectMember -Text $raw -ObjectStart $rootStart -Key 'mcpServers'
+    if ($null -eq $servers) {
+        $insertion = $nl + '  "mcpServers": {' + $nl + $hubEntry + $nl + '  }'
+        if (-not (Test-JsonContainerIsEmpty -Text $raw -Start $rootStart)) { $insertion += ',' }
+        $updated = $raw.Insert($rootStart + 1, $insertion)
+    }
+    elseif ($raw[$servers.ValueStart] -ne '{') {
+        Write-Warning "'mcpServers' em '$JsonFilePath' nao e um objeto; review-hub nao registrado."
+        return $false
     }
     else {
-        return $false
+        $hub = Find-JsonObjectMember -Text $raw -ObjectStart $servers.ValueStart -Key 'review-hub'
+        if ($null -eq $hub) {
+            $insertion = if (Test-JsonContainerIsEmpty -Text $raw -Start $servers.ValueStart) {
+                $nl + $hubEntry + $nl + '  '
+            }
+            else {
+                $nl + $hubEntry + ','
+            }
+            $updated = $raw.Insert($servers.ValueStart + 1, $insertion)
+        }
+        else {
+            # Atualiza so command e args, preservando env, disabled e demais chaves do bloco existente.
+            $block = $raw.Substring($hub.ValueStart, $hub.ValueEnd - $hub.ValueStart)
+            $block = [regex]::Replace($block, '("command"\s*:\s*)"[^"]*"', "`${1}`"$pyEscaped`"")
+            $block = [regex]::Replace($block, '("args"\s*:\s*\[\s*)"[^"]*"(\s*\])', "`${1}`"$scriptEscaped`"`${2}")
+            $updated = $raw.Substring(0, $hub.ValueStart) + $block + $raw.Substring($hub.ValueEnd)
+        }
     }
 
     if ($updated -ne $raw) {
@@ -237,10 +408,22 @@ foreach ($dir in $skillTargetRoots) {
     }
 
     if ($RemoveLegacyGustavoSkills) {
-        $legacyItems = Get-ChildItem -LiteralPath $dir -Filter "gustavo-*" -Force -ErrorAction SilentlyContinue
+        $legacyItems = @(Get-ChildItem -LiteralPath $dir -Filter "gustavo-*" -Force -ErrorAction SilentlyContinue)
         foreach ($legacy in $legacyItems) {
-            Remove-DirectoryOrJunctionSafe -LiteralPath $legacy.FullName
-            Write-Host "      Skill legada removida: $($legacy.FullName)" -ForegroundColor DarkYellow
+            $isLink = ($legacy.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0
+            if ($isLink) {
+                Remove-DirectoryOrJunctionSafe -LiteralPath $legacy.FullName
+                Write-Host "      Junction legada removida: $($legacy.FullName)" -ForegroundColor DarkYellow
+            }
+            else {
+                # Pasta real: move para backup (fora da pasta de skills, para nao ser carregada) em vez de apagar.
+                $backupDir = Join-Path (Split-Path -Parent $dir) "skills-legacy-backup\$runTimestamp"
+                if (-not (Test-Path -LiteralPath $backupDir)) {
+                    $null = New-Item -ItemType Directory -Path $backupDir -Force
+                }
+                Move-Item -LiteralPath $legacy.FullName -Destination $backupDir
+                Write-Host "      Skill legada movida para backup: $($legacy.FullName) -> $backupDir" -ForegroundColor DarkYellow
+            }
         }
     }
 
@@ -332,7 +515,13 @@ $agMcpConfigPath = Join-Path $HOME ".gemini\config\mcp_config.json"
 $claudeJsonPath = Join-Path $HOME ".claude.json"
 $reviewHubScriptPath = Join-Path $ToolkitRoot "mcp\review-hub\review_hub.py"
 
-$pythonExe = Resolve-PythonExecutable -ConfigFiles @($agMcpConfigPath, $claudeJsonPath)
+$venvPython = Join-Path $ToolkitRoot "mcp\review-hub\.venv\Scripts\python.exe"
+
+$pythonExe = Resolve-PythonExecutable -VenvPython $venvPython -ConfigFiles @($agMcpConfigPath, $claudeJsonPath)
+if (-not (Test-PythonHasMcpPackage -PythonExe $pythonExe)) {
+    Write-Host "      Aviso: o pacote 'mcp' nao foi encontrado em '$pythonExe'; o review-hub nao vai iniciar." -ForegroundColor Yellow
+    Write-Host "      Crie a venv: python -m venv mcp\review-hub\.venv e depois mcp\review-hub\.venv\Scripts\python -m pip install -r mcp\review-hub\requirements.txt" -ForegroundColor Yellow
+}
 
 $agUpdated = Update-ReviewHubMcpInJsonFile `
     -JsonFilePath $agMcpConfigPath `

@@ -108,17 +108,18 @@ The toolkit is **Windows-first**: the bootstrap relies on Directory Junctions an
 ```powershell
 git clone https://github.com/Gustavo-Piccoli/Gap.AI-Toolkit.git
 cd Gap.AI-Toolkit
-pip install -r mcp/review-hub/requirements.txt
+python -m venv mcp\review-hub\.venv
+mcp\review-hub\.venv\Scripts\python -m pip install -r mcp\review-hub\requirements.txt
 powershell -ExecutionPolicy Bypass -File .\scripts\Setup-Environment.ps1
 ```
 
 `Setup-Environment.ps1` can be re-run whenever something changes. It:
 
 1. installs the `pre-commit` hook in this repository;
-2. creates Junctions for the `gap-*` skills in `~/.claude/skills`, `~/.gemini/config/skills` and `~/.agents/skills` (no admin rights needed) and removes orphaned ones;
-3. generates `~/.claude/CLAUDE.md` importing `rules/AGENTS.md` and, if present, local overlays such as `~/.claude/CLAUDE.local.md`;
+2. creates Junctions for the `gap-*` skills in `~/.claude/skills`, `~/.gemini/config/skills` and `~/.agents/skills` (no admin rights needed) and removes orphaned ones; legacy `gustavo-*` skills that are real folders are moved to `skills-legacy-backup\<timestamp>`, next to the skills folder, instead of being deleted;
+3. generates `~/.claude/CLAUDE.md` importing `rules/AGENTS.md` and, if present, local overlays such as `~/.claude/CLAUDE.local.md` (the file is **rewritten**: if you already keep instructions in your `~/.claude/CLAUDE.md`, move them to an overlay first);
 4. syncs the Antigravity `user-preferences` plugin;
-5. registers `review-hub` in Claude Code (`~/.claude.json`) and Antigravity (`~/.gemini/config/mcp_config.json`).
+5. registers `review-hub` in the root `mcpServers` of Claude Code (`~/.claude.json`) and Antigravity (`~/.gemini/config/mcp_config.json`), using the Python from `mcp\review-hub\.venv` when it exists.
 
 To make Antigravity also read the `CLAUDE.md` of every repository in a projects folder:
 
