@@ -4,6 +4,9 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+- Demo GIF of a `review-hub` session in both READMEs (`docs/assets/demo.gif`).
+
 ### Changed
 - Installation docs create a virtual environment in `mcp/review-hub/.venv`, and `Setup-Environment.ps1` prefers its Python for `review-hub`, warning when the selected interpreter lacks the `mcp` package.
 - README documents that `Setup-Environment.ps1` rewrites `~/.claude/CLAUDE.md`, so existing instructions belong in an overlay.

@@ -9,8 +9,7 @@
 **Who it's for:** developers using **Claude Code** and/or **Google Antigravity** on **Windows** who want the same rules and skills in both clients without copying files around.
 **In 2 minutes:** clone the repo, run `scripts\Setup-Environment.ps1`, then type `/gap-create-plan <what you want to build>` in Claude Code.
 
-<!-- DEMO: record a short GIF (~15 s) of the /gap-create-plan → /gap-review-plan cycle, save it as docs/assets/demo.gif and uncomment the line below. -->
-<!-- ![Planning cycle demo](docs/assets/demo.gif) -->
+![review-hub demo: one agent files a finding, another replies and the thread is read back](docs/assets/demo.gif)
 
 > The skill instructions and the rules file are mostly written in Portuguese (PT-BR); the plans and reports they generate, the docs and the examples are in English.
 

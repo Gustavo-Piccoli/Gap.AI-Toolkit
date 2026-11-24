@@ -9,8 +9,7 @@
 **Para quem:** quem usa **Claude Code** e/ou **Google Antigravity** no **Windows** e quer as mesmas regras e skills nos dois clientes, sem copiar arquivos.
 **Em 2 minutos:** clone o repositório, rode `scripts\Setup-Environment.ps1` e, no Claude Code, digite `/gap-create-plan <o que você quer construir>`.
 
-<!-- DEMO: grave um GIF curto (~15 s) do ciclo /gap-create-plan → /gap-review-plan, salve em docs/assets/demo.gif e descomente a linha abaixo. -->
-<!-- ![Demo do ciclo de planejamento](docs/assets/demo.gif) -->
+![Demo do review-hub: um agente registra um apontamento, outro responde e a thread é lida](docs/assets/demo.gif)
 
 ---
 
