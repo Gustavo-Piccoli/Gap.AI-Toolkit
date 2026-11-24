@@ -114,7 +114,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Setup-Environment.ps1
 O `Setup-Environment.ps1` pode ser rodado de novo sempre que algo mudar. Ele:
 
 1. instala o hook `pre-commit` neste repositório;
-2. cria Junctions das skills `gap-*` em `~/.claude/skills`, `~/.gemini/config/skills` e `~/.agents/skills` (sem exigir administrador) e remove Junctions órfãs; skills legadas `gustavo-*` que sejam pastas reais são movidas para `skills-legacy-backup\<data-hora>`, ao lado da pasta de skills, em vez de apagadas;
+2. cria Junctions das skills `gap-*` em `~/.claude/skills`, `~/.gemini/config/skills` e `~/.agents/skills` (sem exigir administrador) e remove Junctions órfãs; com `-RemoveLegacyGustavoSkills $true`, também retira as skills legadas `gustavo-*` (pastas reais são movidas para `skills-legacy-backup\<data-hora>`, ao lado da pasta de skills, em vez de apagadas);
 3. gera o `~/.claude/CLAUDE.md` importando `rules/AGENTS.md` e, se existirem, overlays locais como `~/.claude/CLAUDE.local.md` (o arquivo é **reescrito**: se você já tem instruções no seu `~/.claude/CLAUDE.md`, mova-as para um overlay antes de rodar);
 4. sincroniza o plugin `user-preferences` do Antigravity;
 5. registra o `review-hub` no `mcpServers` da raiz do Claude Code (`~/.claude.json`) e do Antigravity (`~/.gemini/config/mcp_config.json`), usando o Python de `mcp\review-hub\.venv` quando ela existir.

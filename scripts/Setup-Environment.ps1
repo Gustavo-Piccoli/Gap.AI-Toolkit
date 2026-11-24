@@ -6,8 +6,9 @@
 .DESCRIPTION
     Script idempotente compativel com Windows PowerShell 5.1+ que realiza:
       1. Instalacao do Git hook local (.git/hooks/pre-commit) no repositorio Gap.AI-Toolkit.
-      2. Remocao segura de skills legadas (gustavo-*: Junctions sao removidas, pastas reais sao movidas para
-         <raiz>\skills-legacy-backup\<data-hora>) e de Junctions gap-* orfas (destino removido ou renomeado),
+      2. Remocao segura de skills legadas (gustavo-*, so com -RemoveLegacyGustavoSkills $true: Junctions sao
+         removidas, pastas reais sao movidas para <raiz>\skills-legacy-backup\<data-hora>) e de Junctions gap-*
+         orfas (destino removido ou renomeado),
          e criacao de Junctions para todas as skills (gap-*) em ~/.claude/skills, ~/.agents/skills e
          ~/.gemini/config/skills.
       3. Geracao do arquivo global ~/.claude/CLAUDE.md importando rules/AGENTS.md e overlays locais/corporativos
@@ -24,7 +25,7 @@ param(
     [string]$ToolkitRoot = "",
 
     [Parameter(Mandatory = $false)]
-    [bool]$RemoveLegacyGustavoSkills = $true
+    [bool]$RemoveLegacyGustavoSkills = $false
 )
 
 Set-StrictMode -Version Latest

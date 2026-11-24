@@ -7,6 +7,7 @@ All notable changes to this project are documented here. The format follows [Kee
 ### Changed
 - Installation docs create a virtual environment in `mcp/review-hub/.venv`, and `Setup-Environment.ps1` prefers its Python for `review-hub`, warning when the selected interpreter lacks the `mcp` package.
 - README documents that `Setup-Environment.ps1` rewrites `~/.claude/CLAUDE.md`, so existing instructions belong in an overlay.
+- `Setup-Environment.ps1` no longer touches legacy `gustavo-*` skills by default; pass `-RemoveLegacyGustavoSkills $true` to retire them.
 
 ### Fixed
 - `Setup-Environment.ps1` registers `review-hub` in the root `mcpServers` of `~/.claude.json`; it used to insert it into the first project-scoped `mcpServers`, making the server available in a single folder only.
