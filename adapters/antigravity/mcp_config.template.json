@@ -1,0 +1,24 @@
+{
+  "mcpServers": {
+    "agentchattr": {
+      "headers": {
+        "Authorization": "Bearer <AGENTCHATTR_TOKEN>"
+      },
+      "serverUrl": "http://127.0.0.1:8200/mcp",
+      "trust": true,
+      "type": "http"
+    },
+    "review-hub": {
+      "args": [
+        "<TOOLKIT_ROOT>/mcp/review-hub/review_hub.py"
+      ],
+      "command": "<PYTHON_EXE>",
+      "disabled": false
+    }
+  },
+  "security": {
+    "folderTrust": {
+      "enabled": true
+    }
+  }
+}

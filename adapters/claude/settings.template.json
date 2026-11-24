@@ -1,0 +1,88 @@
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build *)",
+      "Bash(dotnet test *)"
+    ],
+    "defaultMode": "auto",
+    "additionalDirectories": []
+  },
+  "model": "opus",
+  "worktree": {
+    "baseRef": "fresh"
+  },
+  "disableAgentView": true,
+  "enabledPlugins": {
+    "mattpocock-skills@mattpocock": true,
+    "skill-creator@claude-plugins-official": true,
+    "superpowers@superpowers-marketplace": true,
+    "modern-web-guidance@claude-plugins-official": true
+  },
+  "extraKnownMarketplaces": {
+    "mattpocock": {
+      "source": {
+        "source": "github",
+        "repo": "mattpocock/skills"
+      }
+    },
+    "superpowers-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "obra/superpowers-marketplace"
+      }
+    }
+  },
+  "language": "português brasileiro",
+  "feedbackDrafts": "off",
+  "spinnerVerbs": {
+    "mode": "replace",
+    "verbs": [
+      "Working"
+    ]
+  },
+  "effortLevel": "high",
+  "modelSettings": {
+    "claude-sonnet-5-5": {
+      "effortLevel": "high"
+    },
+    "claude-opus-5-5": {
+      "effortLevel": "high"
+    },
+    "claude-haiku-5-5": {
+      "effortLevel": "medium"
+    }
+  },
+  "promptSuggestionEnabled": false,
+  "theme": "dark",
+  "editorMode": "normal",
+  "autoCompactEnabled": true,
+  "switchModelsOnFlag": true,
+  "teammateMode": "auto",
+  "Teammate": {
+    "teammateMode": "auto"
+  },
+  "remoteControlAtStartup": false,
+  "crossSessionInbound": "accept",
+  "agentPushNotifEnabled": true,
+  "autoMode": {
+    "soft_deny": [
+      "$defaults",
+      "Bash(sqlcmd:* -S *producao*)",
+      "Bash(sqlcmd:* -S *PRODUCAO*)",
+      "Bash(sqlcmd:* -S *production*)",
+      "Bash(sqlcmd:* -S *PRODUCTION*)",
+      "Bash(git push:*) targeting a public remote without explicit confirmation from the user"
+    ],
+    "environment": [
+      "### Org-wide",
+      "**Organization**: Generic Software Engineering Environment",
+      "**Sensitive remote targets**: Any host, database instance, namespace, or connection string containing `prod`, `producao`, or `production` as a name segment",
+      "**Protected branches**: `main` and `master` are treated as protected branches by default; confirm before force-pushing or publishing to public remotes",
+      "### User-specific",
+      "**Primary use of Claude Code**: Software architecture, full-stack development, code review, and automated testing"
+    ]
+  }
+}

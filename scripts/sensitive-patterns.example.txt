@@ -1,0 +1,18 @@
+# Exemplo de arquivo de padroes sensiveis LOCAIS para scripts/Test-SensitiveData.ps1.
+#
+# NAO coloque padroes reais neste arquivo: ele e versionado. Copie-o para
+#   ~/.config/gap-toolkit/sensitive-patterns.txt   (Windows: %USERPROFILE%\.config\gap-toolkit\)
+# ou aponte a variavel GAP_SENSITIVE_PATTERNS_FILE para outro caminho fora do repositorio.
+#
+# Formato: Categoria<TAB>Regex (sem diferenciar maiusculas). Linhas com # sao comentarios.
+# Todos os valores abaixo sao ficticios (dominio reservado .example, RFC 2606).
+
+Matricula corporativa	\bACME-\d{6}\b
+Organizacao corporativa	\bAcme\s+Corp\b
+Dominio interno	\bintranet\.acme\.example\b
+Servidor interno	\bsrv-acme-[a-z]+\d{2}\b
+Banco de dados interno	\bACME_[A-Z]{3}_DB\b
+Codigo de projeto	\bPRJ-ACME-\d{4}\b
+Variavel de credencial	\bACME_DEVOPS_PAT\b
+Nome de colega	\bFulano\s+de\s+Tal\b
+E-mail corporativo	@acme\.example\b

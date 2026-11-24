@@ -1,0 +1,35 @@
+# Artefatos locais de agentes, planejamento de IA e orquestração (não versionar)
+CLAUDE.md
+CLAUDE.local.md
+GEMINI.md
+.claude/
+.agents/
+.gemini/
+.orq/
+graphify-out/
+docs/superpowers/
+/plano-*.md
+/revisao-*.md
+/findings-*.md
+
+# Padrões sensíveis reais: ficam fora do repositório (só o .example é versionado)
+sensitive-patterns.txt
+
+# Python / MCP
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+.review_thread.json
+
+# Ambiente e logs
+.env
+*.log
+
+# Sistema operacional
+.DS_Store
+Thumbs.db

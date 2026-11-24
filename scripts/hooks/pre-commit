@@ -1,0 +1,19 @@
+#!/bin/sh
+# Bloqueia o commit se o scanner encontrar dados sensiveis ou se o git user.email
+# corresponder a algum padrao local (ex.: dominio corporativo). Os padroes da sua
+# organizacao ficam fora do repositorio; veja scripts/sensitive-patterns.example.txt.
+set -e
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+
+if command -v pwsh >/dev/null 2>&1; then
+    PS_EXE="pwsh"
+elif command -v powershell.exe >/dev/null 2>&1; then
+    PS_EXE="powershell.exe"
+else
+    echo "[ERRO] PowerShell nao encontrado; o scanner de dados sensiveis nao pode rodar." >&2
+    exit 1
+fi
+
+"$PS_EXE" -NoProfile -NonInteractive -ExecutionPolicy Bypass \
+    -File "$REPO_ROOT/scripts/Test-SensitiveData.ps1" -CheckGitEmail

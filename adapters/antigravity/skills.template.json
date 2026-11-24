@@ -1,0 +1,7 @@
+{
+  "skillDirectories": [
+    "<TOOLKIT_ROOT>/skills",
+    "<USER_HOME>/.agents/skills",
+    "<USER_HOME>/.gemini/config/skills"
+  ]
+}

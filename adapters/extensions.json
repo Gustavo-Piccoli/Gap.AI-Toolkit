@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Catalogo de extensoes, plugins, skills de terceiros e servidores MCP que compoem o ecossistema Gap.AI-Toolkit.",
+  "claudeCode": {
+    "marketplaces": [
+      {
+        "id": "superpowers-marketplace",
+        "repo": "obra/superpowers-marketplace",
+        "source": "github",
+        "description": "Marketplace oficial do framework Superpowers para fluxos de engenharia disciplinados (brainstorming, writing-plans, TDD, debugging, code review)."
+      },
+      {
+        "id": "mattpocock",
+        "repo": "mattpocock/skills",
+        "source": "github",
+        "description": "Colecao de skills utilitarias de arquitetura, entrevistas de design (grill-me), PRD e fatiamento vertical."
+      },
+      {
+        "id": "claude-plugins-official",
+        "repo": "anthropics/claude-plugins-official",
+        "source": "github",
+        "description": "Repositorio oficial de plugins da Anthropic para Claude Code."
+      }
+    ],
+    "plugins": [
+      {
+        "id": "superpowers@superpowers-marketplace",
+        "marketplace": "obra/superpowers-marketplace",
+        "enabled": true,
+        "description": "Workflows completos de planejamento, execucao guiada por subagentes, TDD e verificacao."
+      },
+      {
+        "id": "mattpocock-skills@mattpocock",
+        "marketplace": "mattpocock/skills",
+        "enabled": true,
+        "description": "Skills de refinamento de design, arquitetura de modulos profundos e planejamento incremental."
+      },
+      {
+        "id": "skill-creator@claude-plugins-official",
+        "marketplace": "anthropics/claude-plugins-official",
+        "enabled": true,
+        "description": "Ferramental para criacao, avaliacao e benchmark de skills."
+      },
+      {
+        "id": "modern-web-guidance@claude-plugins-official",
+        "marketplace": "anthropics/claude-plugins-official",
+        "enabled": true,
+        "description": "Diretrizes modernas de desenvolvimento web e UI."
+      }
+    ]
+  },
+  "globalSkills": [
+    {
+      "name": "graphify",
+      "trigger": "/graphify",
+      "description": "Transforma repositorios de codigo, documentacao, artigos e imagens em um grafo de conhecimento persistente (graphify-out/) com deteccao de comunidades, god nodes e ferramentas de consulta.",
+      "install": "pip install graphifyy && graphify install",
+      "targets": [
+        "~/.claude/skills/graphify",
+        "~/.agents/skills/graphify",
+        "~/.gemini/config/skills/graphify"
+      ]
+    },
+    {
+      "name": "caveman",
+      "trigger": "/caveman",
+      "description": "Modo de comunicacao ultra-comprimido que reduz ~75% dos tokens de saida mantendo 100% da precisao tecnica (suporta modos lite, full, ultra, wenyan, commit e review).",
+      "targets": [
+        "~/.claude/skills/caveman",
+        "~/.agents/skills/caveman",
+        "~/.gemini/config/skills/caveman"
+      ]
+    }
+  ],
+  "mcpServers": [
+    {
+      "name": "review-hub",
+      "type": "stdio",
+      "bundledPath": "mcp/review-hub/review_hub.py",
+      "description": "Servidor FastMCP local para debates estruturados de Code Review multi-agente, persistindo threads em ~/.review_thread.json."
+    },
+    {
+      "name": "agentchattr",
+      "type": "http",
+      "url": "http://127.0.0.1:8200/mcp",
+      "description": "Servidor HTTP MCP local na porta 8200 para chat, coordenacao sincrona e troca de mensagens em tempo real entre multiplos agentes."
+    }
+  ]
+}
