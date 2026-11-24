@@ -1,205 +1,176 @@
-# Gap.AI-Toolkit — Agnostic Agent Architecture, Custom Skills & Multi-AI Orchestration
+# Gap.AI-Toolkit
 
-> **Language / Idioma:** [Português (PT-BR)](./README.md) | **English (EN)**
+[![CI](https://github.com/Gustavo-Piccoli/Gap.AI-Toolkit/actions/workflows/ci.yml/badge.svg)](https://github.com/Gustavo-Piccoli/Gap.AI-Toolkit/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
-Central repository for AI-assisted software engineering, multi-agent orchestration, and automated developer environment setup. Engineered to act as a **Single Source of Truth** across multiple AI coding clients — such as **Claude Code** and **Google Antigravity (`agy`)** — combining universal engineering rules, **12 custom-built skills (`gap-*`)**, a **custom Python MCP server (`review-hub`)** for multi-agent Code Review mediation, and idempotent bootstrap scripts.
+> **Language / Idioma:** [Português (PT-BR)](./README.md) | **English**
 
----
+**What it is:** an engineering toolkit for AI coding agents: working rules in one universal `AGENTS.md`, 12 `gap-*` skills, and a custom MCP server (`review-hub`) that lets two agents review each other's code.
+**Who it's for:** developers using **Claude Code** and/or **Google Antigravity** on **Windows** who want the same rules and skills in both clients without copying files around.
+**In 2 minutes:** clone the repo, run `scripts\Setup-Environment.ps1`, then type `/gap-create-plan <what you want to build>` in Claude Code.
 
-## 1. Overview & Motivation
+<!-- DEMO: record a short GIF (~15 s) of the /gap-create-plan → /gap-review-plan cycle, save it as docs/assets/demo.gif and uncomment the line below. -->
+<!-- ![Planning cycle demo](docs/assets/demo.gif) -->
 
-Modern AI-assisted development environments frequently suffer from **configuration fragmentation**: behavioral rules get locked into vendor-specific files (`CLAUDE.md` vs. `AGENTS.md` vs. `GEMINI.md`), custom skills get duplicated across global folders (`~/.claude/skills`, `~/.gemini/config/skills`, `~/.agents/skills`), and employer-specific context gets tangled with personal engineering workflows.
-
-**`Gap.AI-Toolkit`** solves this through three core design principles:
-
-1. **Agnostic Core (`rules/AGENTS.md` + `skills/gap-*`):** All engineering doctrine, architectural decision protocols, and multi-step workflows are written in a universal format compatible with both Claude Code and Google Antigravity.
-2. **Zero-Duplication Linking (`scripts/Setup-Environment.ps1`):** Rather than copying files around manually, the setup script uses Windows *Directory Junctions* and native manifests so any edit to a skill or rule is immediately live across every AI tool on the machine.
-3. **Strict Isolation of Private/Corporate Context:** Supports injecting an optional local private overlay (`CLAUDE.local.md`) without polluting the public repository, backed by an automated `pre-commit` security gate that prevents accidental leaks of sensitive or corporate data.
+> The skill instructions and the rules file are mostly written in Portuguese (PT-BR); the plans and reports they generate, the docs and the examples are in English.
 
 ---
 
-## 2. Ecosystem Architecture
+## Highlight: the `review-hub` MCP server
 
-```mermaid
-flowchart TD
-    subgraph Toolkit["Gap.AI-Toolkit (Single Source of Truth)"]
-        Rules["rules/AGENTS.md<br/>(Universal Engineering Doctrine)"]
-        Skills["skills/gap-*<br/>(12 Custom Multi-AI Skills)"]
-        MCP["mcp/review-hub/review_hub.py<br/>(FastMCP Code Review Server)"]
-        Adapters["adapters/<br/>(Claude, Antigravity & Extension Templates)"]
-        Setup["scripts/Setup-Environment.ps1<br/>(Idempotent Bootstrap)"]
-    end
+The most verifiable code in this repo is [`mcp/review-hub/review_hub.py`](./mcp/review-hub/review_hub.py), a Python **Model Context Protocol** server built on FastMCP. It gives two agents (for example, Claude Code as implementer and Antigravity as reviewer) a shared review thread through 4 tools: register a finding, reply, read and clear.
 
-    subgraph LocalMachine["Developer Local Environment"]
-        Claude["Claude Code (~/.claude & ~/.claude.json)"]
-        Antigravity["Google Antigravity (~/.gemini/config)"]
-        AgentsDir["Agnostic Skills Dir (~/.agents/skills)"]
-        PrivateOverlay["Optional Private Overlay<br/>(~/.claude/CLAUDE.local.md)"]
-    end
+- **Safe with concurrent agents:** cross-process file lock (Windows and POSIX) and atomic writes (`tempfile` + `fsync` + `os.replace`).
+- **No silent data loss:** corrupted JSON raises an explicit error and the file is left untouched.
+- **Configurable:** storage path via the `REVIEW_HUB_STORAGE` environment variable.
+- **Tested:** 16 pytest tests, including concurrent writers (threads and processes); CI runs on Ubuntu (Python 3.10 and 3.13) and Windows.
 
-    Setup -->|"Junctions + @import"| Claude
-    Setup -->|"Junctions + user-preferences plugin"| Antigravity
-    Setup -->|"Junctions"| AgentsDir
-    Rules --> Claude
-    Rules --> Antigravity
-    Skills --> Claude
-    Skills --> Antigravity
-    Skills --> AgentsDir
-    MCP -->|"Stdio MCP"| Claude
-    MCP -->|"Stdio MCP"| Antigravity
-    PrivateOverlay -.->|"Isolated Local Import"| Claude
-```
+Docs: [server README (PT-BR)](./mcp/review-hub/README.md) · [JSON format](./docs/review-hub-format.md) · [sample thread](./examples/todo-api-rate-limit/review-thread.json).
 
 ---
 
-## 3. Agent Engineering Doctrine ([`rules/AGENTS.md`](./rules/AGENTS.md))
+## What's inside
 
-The [`rules/AGENTS.md`](./rules/AGENTS.md) playbook consolidates battle-tested rules for high-complexity software engineering:
+### Universal rules: [`rules/AGENTS.md`](./rules/AGENTS.md)
 
-- **Inversion of Control & Incremental Architecture:** Agents never guess ambiguous requirements or dump monolithic designs without prior alignment. Architectural decisions are broken down into small steps, presenting side-by-side *trade-off* tables before recommending an option.
-- **Shallow Subagent Hierarchy (1-Level):** Strict `coordinator → executor` delegation. Subagents never spawn sub-subagents, follow a semantic `<role>-<task>` naming convention, and are terminated immediately upon completing their task.
-- **Context Window Compression:** Heavy codebase exploration is delegated to isolated subagents that return a dense 20–30 line digest with exact `file:line` pointers, keeping the coordinator's context window clean.
-- **Multi-Agent Technical Debate (Max 3 Rounds):** Adversarial reviews between agents take place through a structured channel (dedicated file or the `review-hub` MCP server). If an impasse remains after 3 rounds, the decision is escalated to the human engineer with both arguments summarized.
-- **Graphify First:** Before running raw text searches (`grep`), agents check for a repository knowledge graph (`graphify-out/graph.json`) to query architecture and call paths structurally.
-- **Git Hygiene & Living Documentation:** Repository documentation describes only the current system state (no temporal changelogs); local AI artifacts are isolated via `.git/info/exclude` (never polluting the team's shared `.gitignore`); commits use clean functional messages without `Co-Authored-By` noise.
+A single rules file, read by Claude Code (via `@import` in `~/.claude/CLAUDE.md`) and by Antigravity (via the `user-preferences` plugin). It covers:
 
----
+- asking before assuming requirements, and showing trade-offs before recommending;
+- a shallow subagent hierarchy (one level), standard names and shutting down idle agents;
+- delegating long reads to subagents that return short summaries with `file:line` pointers;
+- agent-to-agent debate capped at 3 rounds, then escalation to the human;
+- checking a repository knowledge graph (graphify) before `grep`;
+- Git hygiene, docs that describe only the current state, and PowerShell 5.1 encoding pitfalls.
 
-## 4. Catalog of the 12 Custom Skills (`gap-*`)
-
-Every skill follows the open `skills/<name>/SKILL.md` standard and includes cross-platform tool mappings for **Claude Code** and **Google Antigravity**.
-
-### 4.1. Adversarial Planning & Execution Lifecycle (`gap-*-plan`)
-
-A 5-stage engineering pipeline designed to surface hidden assumptions and architectural flaws *before* and *during* implementation:
+### Adversarial planning cycle (`gap-*-plan`)
 
 ```mermaid
 flowchart LR
-    Create["1. gap-create-plan<br/>(Interview & Spec)"] --> Review["2. gap-review-plan<br/>(Parallel Hostile Audit)"]
-    Review -->|"Open Findings"| Fix["3. gap-fix-plan<br/>(Interactive Resolution)"]
+    Create["1. gap-create-plan<br/>(interview and plan)"] --> Review["2. gap-review-plan<br/>(parallel audit)"]
+    Review -->|"open findings"| Fix["3. gap-fix-plan<br/>(interactive fixes)"]
     Fix --> Review
-    Review -->|"Approved"| Execute["4. gap-execute-plan<br/>(Subagent Execution)"]
-    Execute --> Finish["5. gap-finish-plan<br/>(Code Review + Tests)"]
+    Review -->|"approved"| Execute["4. gap-execute-plan<br/>(subagent execution)"]
+    Execute --> Finish["5. gap-finish-plan<br/>(code review + tests)"]
 ```
 
-| Skill | Role in Pipeline |
+| Skill | Role |
 | :--- | :--- |
-| **[`gap-create-plan`](./skills/gap-create-plan/SKILL.md)** | **Adversarial Plan Architect:** Investigates the codebase, conducts an exhaustive Socratic interview with globally numbered questions (zero unverified assumptions), and outputs a self-contained implementation plan (`plano-<name>.md`) using a [structured template](./skills/gap-create-plan/references/plan-template.md). |
-| **[`gap-review-plan`](./skills/gap-review-plan/SKILL.md)** | **Hostile Plan Auditor:** Partitions plan auditing across parallel subagents (by technical dimension or phase), tracks findings with stable IDs (`F1`, `F2`...) across review versions (`revisao-<name>-v<N>.md`), and blocks execution until critical flaws are resolved. |
-| **[`gap-fix-plan`](./skills/gap-fix-plan/SKILL.md)** | **Interactive Finding Resolver:** Reads the plan and the `gap-review-plan` report, walks the developer through each `OPEN`/`REOPENED` finding, and surgically applies approved fixes to the plan. |
-| **[`gap-execute-plan`](./skills/gap-execute-plan/SKILL.md)** | **Disciplined Plan Runner:** Executes an approved `plano-*.md` in a clean session, dispatching fresh subagents per task, verifying acceptance criteria, and updating the *Master Checklist* in-place. |
-| **[`gap-finish-plan`](./skills/gap-finish-plan/SKILL.md)** | **Post-Implementation Auditor:** Dispatches parallel subagents for hostile code review against the original plan and full test suite verification, producing a versioned findings report (`findings-<name>-v<N>.md`). |
+| [`gap-create-plan`](./skills/gap-create-plan/SKILL.md) | Investigates the code, interviews the user with numbered questions and writes a self-contained plan from a [template](./skills/gap-create-plan/references/plan-template.md). |
+| [`gap-review-plan`](./skills/gap-review-plan/SKILL.md) | Reviews the plan with parallel subagents and tracks problems with stable IDs (`F1`, `F2`...) across cycles. |
+| [`gap-fix-plan`](./skills/gap-fix-plan/SKILL.md) | Discusses each open finding with the user and applies the approved fixes to the plan. |
+| [`gap-execute-plan`](./skills/gap-execute-plan/SKILL.md) | Executes an approved plan by dispatching one subagent per task and updating the checklist. |
+| [`gap-finish-plan`](./skills/gap-finish-plan/SKILL.md) | Reviews the implementation against the plan, runs the tests and writes a findings report. |
 
-### 4.2. Hybrid Multi-AI Orchestration
+A complete fictional example lives in [`examples/todo-api-rate-limit/`](./examples/todo-api-rate-limit/): the [plan](./examples/todo-api-rate-limit/plano-todo-api-rate-limit.md), the [review report](./examples/todo-api-rate-limit/revisao-todo-api-rate-limit-v1.md) and the [review-hub thread](./examples/todo-api-rate-limit/review-thread.json).
+
+### Other skills
 
 | Skill | Description |
 | :--- | :--- |
-| **[`gap-fluxo`](./skills/gap-fluxo/SKILL.md)** | **End-to-End Hybrid Orchestrator (Spec-Kit + Claude + Antigravity):** Chains the Spec-Kit workflow (`specify → clarify → plan → tasks → analyze`) and evaluates each task across 4 complexity criteria to route execution dynamically between native Claude Code subagents and **Google Antigravity CLI (`agy`)** connected via `agentchattr`. |
+| [`gap-fluxo`](./skills/gap-fluxo/SKILL.md) | Runs a request end to end with spec-kit and decides, task by task, between a native subagent and the Antigravity CLI (`agy`) via agentchattr. |
+| [`gap-commit`](./skills/gap-commit/SKILL.md) | Stage, commit and push with a secrets check, `pull --rebase` and a proxy workaround. |
+| [`gap-pr`](./skills/gap-pr/SKILL.md) | Writes a PR title and description from the branch history and opens the PR on GitHub (`gh`) or Azure DevOps (REST). |
+| [`gap-explain`](./skills/gap-explain/SKILL.md) | Technical explanation mode in short blocks, designed to reduce cognitive fatigue (ADHD). |
+| [`gap-create-skill`](./skills/gap-create-skill/SKILL.md) | Guided interview to create a new `gap-*` skill. |
+| [`gap-create-subagent`](./skills/gap-create-subagent/SKILL.md) | Creates subagents with least-privilege tools and a fitting model. |
+| [`gap-switch-claude`](./skills/gap-switch-claude/SKILL.md) | Switches the active Claude Code account via `cswap`. |
 
-### 4.3. Daily Engineering, Cognitive Ergonomics & Meta-Tooling
+---
 
-| Skill | Description |
+## Original work vs. third-party
+
+| Original (this repository) | Third-party (used or integrated, not included here) |
 | :--- | :--- |
-| **[`gap-commit`](./skills/gap-commit/SKILL.md)** | **Safe Commit & Sync Workflow:** Inspects `status`/`diff` to prevent secret leaks, writes a concise functional commit message (imperative summary + functional bullets, no implementation noise, no `Co-Authored-By`), runs safe `pull --rebase`, and pushes (with optional corporate proxy env bypass). |
-| **[`gap-pr`](./skills/gap-pr/SKILL.md)** | **Pull Request:** Dynamically detects the base branch, analyzes the full commit log and 3-dot diff, and generates a *Conventional Commits* title and structured Markdown description verified to stay ≤ 4,000 characters via a temporary file check. By default it opens the PR (Azure DevOps via REST API with the environment PAT, or GitHub via `gh`), never duplicating an open PR or pushing without consent; when the request makes it clear, it only generates the text for manual creation. |
-| **[`gap-explain`](./skills/gap-explain/SKILL.md)** | **Persistent ADHD-Friendly Technical Explanation Mode:** Adapts the agent's communication style to reduce cognitive fatigue on dense technical topics — provides high-level context before details, makes intermediate reasoning steps explicit, defines jargon on first use, breaks text into short 2–4 line paragraphs without dumbing down content, and closes with a 1–3 sentence synthesis anchor. |
-| **[`gap-create-skill`](./skills/gap-create-skill/SKILL.md)** | **Socratic Skill Builder:** Guides an interactive interview (triggers, workflow steps, boundaries, I/O format, auxiliary resources) to turn a raw idea into a standardized `gap-XXXXX` skill. |
-| **[`gap-create-subagent`](./skills/gap-create-subagent/SKILL.md)** | **Paired Subagent Builder:** Scaffolds isolated subagents and their companion slash commands applying least-privilege tool restrictions and cost-effective model selection (`haiku`/`sonnet`/`opus` or Antigravity equivalents). |
-| **[`gap-switch-claude`](./skills/gap-switch-claude/SKILL.md)** | **Fast Account Switcher (`cswap`):** Rotates the active Claude Code CLI account via `cswap switch` and reports the newly authenticated email. |
+| `rules/AGENTS.md` | [superpowers](https://github.com/obra/superpowers) (Claude Code plugin) |
+| The 12 `gap-*` skills | [mattpocock/skills](https://github.com/mattpocock/skills) |
+| The `review-hub` MCP server | `skill-creator` and `modern-web-guidance` from [anthropics/claude-plugins-official](https://github.com/anthropics/claude-plugins-official) |
+| `scripts/` (bootstrap, workspace linking, sensitive-data scanner, hook) | graphify (`graphifyy` on PyPI), used by the "Graphify First" rule |
+| `adapters/` (configuration templates) | [spec-kit](https://github.com/github/spec-kit) and agentchattr, used by `gap-fluxo` |
+| | caveman (compressed-output skill) and `cswap` (account switcher), used by `gap-switch-claude` |
+| | [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk) (`FastMCP`), the base of `review-hub` |
+
+The catalog of what the bootstrap expects to find is [`adapters/extensions.json`](./adapters/extensions.json); its descriptions come from the tools themselves.
 
 ---
 
-## 5. Custom MCP Server: `CodeReviewHub` ([`mcp/review-hub/`](./mcp/review-hub/README.md))
+## Requirements
 
-Located at [`mcp/review-hub/review_hub.py`](./mcp/review-hub/review_hub.py), **CodeReviewHub** is a custom **Model Context Protocol (MCP)** server built in Python using `FastMCP` to mediate structured code review threads and technical debates between multiple AI agents.
+The toolkit is **Windows-first**: the bootstrap relies on Directory Junctions and Windows paths. `review-hub` and the scanner run on any OS.
 
-- **Exposed Tools:**
-  - `registrar_apontamento(autor, arquivo, linha_ou_trecho, observacao)`: Logs a numbered code review finding.
-  - `responder_apontamento(item_id, autor, resposta)`: Appends a reply, counter-argument, or fix confirmation from another agent.
-  - `ler_discussao()`: Returns the full discussion thread and replies as structured JSON.
-  - `limpar_discussao()`: Resets the discussion state (`~/.review_thread.json`) for a fresh review session.
+- Windows 10/11 with **Windows PowerShell 5.1** or **PowerShell 7+**
+- **Git for Windows** (the `pre-commit` hook runs in its `sh`)
+- **Python 3.10+**
+- **Claude Code** and/or **Google Antigravity** (`agy`)
+- Optional: the third-party plugins and tools above, for the skills that depend on them
 
-See the [full `review-hub` documentation](./mcp/review-hub/README.md) for setup details and multi-agent workflow examples.
+## Installation
 
----
-
-## 6. Repository Structure
-
-```text
-Gap.AI-Toolkit/
-├── README.md                         # Main documentation (Portuguese)
-├── README.en.md                      # Main documentation (English)
-├── rules/
-│   └── AGENTS.md                     # Universal, AI-agnostic engineering doctrine
-├── skills/                           # 12 custom skills (gap-*) for Claude Code & Antigravity
-│   ├── gap-commit/
-│   ├── gap-create-plan/
-│   ├── gap-create-skill/
-│   ├── gap-create-subagent/
-│   ├── gap-execute-plan/
-│   ├── gap-explain/
-│   ├── gap-finish-plan/
-│   ├── gap-fix-plan/
-│   ├── gap-fluxo/
-│   ├── gap-pr/
-│   ├── gap-review-plan/
-│   └── gap-switch-claude/
-├── mcp/
-│   └── review-hub/                   # Python FastMCP server for multi-agent Code Review
-│       ├── review_hub.py
-│       ├── requirements.txt
-│       └── README.md
-├── adapters/                         # Sanitized client templates & 3rd-party extension manifest
-│   ├── extensions.json               # Curated catalog of external plugins/skills (superpowers, mattpocock, graphify, caveman)
-│   ├── claude/
-│   │   ├── CLAUDE.template.md
-│   │   └── settings.template.json
-│   └── antigravity/
-│       ├── plugin.json
-│       ├── skills.template.json
-│       └── mcp_config.template.json
-└── scripts/
-    ├── Setup-Environment.ps1         # Idempotent bootstrap & Junction linking script
-    ├── Link-WorkspaceAgents.ps1      # Utility to link .agents/AGENTS.md -> CLAUDE.md across workspace repos
-    ├── Test-SensitiveData.ps1        # Security scanner against sensitive/corporate data leaks
-    └── hooks/
-        └── pre-commit                # Git hook blocking commits with sensitive data or corporate emails
-```
-
----
-
-## 7. Quickstart (Bootstrapping a New Machine)
-
-### Prerequisites
-- Windows 10/11 with **PowerShell 5.1+** (or PowerShell 7+) and **Git**
-- **Python 3.10+** with the `mcp` package installed (`pip install -r mcp/review-hub/requirements.txt`)
-- **Claude Code CLI** and/or **Google Antigravity (`agy`)**
-
-### Step 1: Clone & Run Bootstrap
 ```powershell
 git clone https://github.com/Gustavo-Piccoli/Gap.AI-Toolkit.git
 cd Gap.AI-Toolkit
+pip install -r mcp/review-hub/requirements.txt
 powershell -ExecutionPolicy Bypass -File .\scripts\Setup-Environment.ps1
 ```
 
-`Setup-Environment.ps1` is **100% idempotent** and automatically performs:
-1. Installs the security `pre-commit` hook into `.git/hooks/pre-commit`.
-2. Creates Windows *Directory Junctions* (`mklink /J`, no Admin privileges required) for all 12 `gap-*` skills inside `~/.claude/skills/`, `~/.gemini/config/skills/`, and `~/.agents/skills/` (first removing orphaned `gap-*` Junctions whose target was renamed or deleted).
-3. Configures `~/.claude/CLAUDE.md` to import `rules/AGENTS.md` (while preserving any existing local/corporate overlay such as `~/.claude/CLAUDE.local.md`).
-4. Updates Google Antigravity's global `user-preferences` plugin (`~/.gemini/config/plugins/user-preferences/rules/AGENTS.md`).
-5. Registers the **`review-hub`** MCP server in both Claude Code (`~/.claude.json`) and Google Antigravity (`~/.gemini/config/mcp_config.json`).
+`Setup-Environment.ps1` can be re-run whenever something changes. It:
 
-### Step 2 (Optional): Link Existing Workspace Repositories for Antigravity
-To ensure all repositories in a project workspace that already have a `CLAUDE.md` are automatically discovered by Google Antigravity (while keeping `git status` clean via `.git/info/exclude`):
+1. installs the `pre-commit` hook in this repository;
+2. creates Junctions for the `gap-*` skills in `~/.claude/skills`, `~/.gemini/config/skills` and `~/.agents/skills` (no admin rights needed) and removes orphaned ones;
+3. generates `~/.claude/CLAUDE.md` importing `rules/AGENTS.md` and, if present, local overlays such as `~/.claude/CLAUDE.local.md`;
+4. syncs the Antigravity `user-preferences` plugin;
+5. registers `review-hub` in Claude Code (`~/.claude.json`) and Antigravity (`~/.gemini/config/mcp_config.json`).
+
+To make Antigravity also read the `CLAUDE.md` of every repository in a projects folder:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\Link-WorkspaceAgents.ps1 -WorkspacePath "C:\Path\To\Your\Repositories"
+powershell -ExecutionPolicy Bypass -File .\scripts\Link-WorkspaceAgents.ps1 -WorkspacePath "C:\path\to\repos"
 ```
 
 ---
 
-## 8. Security & Privacy Gate (`pre-commit` & `Test-SensitiveData.ps1`)
+## Data-leak protection
 
-Because this toolkit can be used on machines that also work with private or corporate repositories, it ships with two automated security layers:
-- **`scripts/Test-SensitiveData.ps1`**: Scans all repository files for internal hostnames, employee IDs, corporate domains, API tokens (`ghp_*`, `sk-ant-*`), or legacy references.
-- **`scripts/hooks/pre-commit`**: Blocks any commit if `git config user.email` uses a corporate domain or if `Test-SensitiveData.ps1` flags any violation.
+This repository lives on machines that also access employer environments, so it has two layers of protection:
+
+- **[`scripts/Test-SensitiveData.ps1`](./scripts/Test-SensitiveData.ps1)** scans tracked and new files. Generic rules (GitHub, Anthropic, OpenAI and AWS tokens, private keys) live in the script. Your organization's patterns live **outside the repository**, in a local file:
+  - `-PatternsFile <path>`, or the `GAP_SENSITIVE_PATTERNS_FILE` variable, or `%USERPROFILE%\.config\gap-toolkit\sensitive-patterns.txt`;
+  - `Category<TAB>Regex` format, as in [`sensitive-patterns.example.txt`](./scripts/sensitive-patterns.example.txt) (fictional values).
+
+  The scanner never prints the matched value, only file, line and category, and it also catches literals split by concatenation (`'ab' + 'cd'`).
+- **[`scripts/hooks/pre-commit`](./scripts/hooks/pre-commit)** runs the scanner before every commit and blocks it if `git user.email` matches a local pattern (for example, your company domain).
+
+---
+
+## Layout
+
+```text
+Gap.AI-Toolkit/
+├── rules/AGENTS.md                  # universal rules for the agents
+├── skills/gap-*/                    # 12 skills (Claude Code and Antigravity)
+├── mcp/review-hub/                  # Python MCP server + tests + pyproject.toml
+├── adapters/                        # configuration templates and extensions catalog
+├── scripts/                         # bootstrap, workspace linking, scanner and hook
+├── docs/                            # review-hub format and JSON Schema
+├── examples/todo-api-rate-limit/    # fictional plan, review and thread
+└── .github/workflows/ci.yml         # ruff, pytest, PSScriptAnalyzer and secret scan
+```
+
+## Development
+
+```bash
+cd mcp/review-hub
+pip install -e ".[dev]"
+python -m pytest -v
+ruff check . && ruff format --check .
+```
+
+```powershell
+Invoke-ScriptAnalyzer -Path .\scripts -Recurse -Settings .\PSScriptAnalyzerSettings.psd1
+.\scripts\Test-SensitiveData.ps1 -PatternsFile .\scripts\sensitive-patterns.example.txt -RequirePatternsFile
+```
+
+Release history is in the [CHANGELOG](./CHANGELOG.md).
+
+## License
+
+[MIT](./LICENSE) © Gustavo Auad Piccoli
