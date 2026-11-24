@@ -131,3 +131,22 @@ def test_mcp_tools_round_trip(storage: Path) -> None:
     assert "nao encontrado" in _call_tool("responder_apontamento", item_id=5, autor="agy", resposta="?")
     assert json.loads(_call_tool("ler_discussao"))["items"][0]["respostas"][0]["autor"] == "agy"
     assert _call_tool("limpar_discussao") == "Historico de revisao limpo."
+
+
+# --- documentacao -----------------------------------------------------------
+REPO_ROOT = Path(__file__).resolve().parents[3]
+
+
+def test_documented_schema_matches_written_items(storage: Path) -> None:
+    schema = json.loads((REPO_ROOT / "docs" / "review-hub.schema.json").read_text(encoding="utf-8"))
+    item = hub.add_item("claude", "a.py", "L1", "x")
+    reply = hub.add_reply(item["id"], "agy", "ok")
+
+    assert set(item) == set(schema["$defs"]["item"]["required"])
+    assert set(reply) == set(schema["$defs"]["reply"]["required"])
+
+
+def test_example_thread_is_loadable() -> None:
+    example = REPO_ROOT / "examples" / "todo-api-rate-limit" / "review-thread.json"
+    thread = hub.load_thread(example)
+    assert [i["id"] for i in thread["items"]] == [1, 2]
