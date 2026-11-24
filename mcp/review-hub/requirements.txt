@@ -1,1 +1,2 @@
-mcp>=1.0.0
+# Mantido para o Setup-Environment.ps1 e para "pip install -r". A fonte da verdade é o pyproject.toml.
+mcp==1.30.0
