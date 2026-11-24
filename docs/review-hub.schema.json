@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Gustavo-Piccoli/Gap.AI-Toolkit/docs/review-hub.schema.json",
+  "title": "CodeReviewHub thread",
+  "type": "object",
+  "required": ["items"],
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/item" }
+    }
+  },
+  "$defs": {
+    "item": {
+      "type": "object",
+      "required": ["id", "autor", "arquivo", "trecho", "observacao", "timestamp", "respostas"],
+      "properties": {
+        "id": { "type": "integer", "minimum": 1 },
+        "autor": { "type": "string" },
+        "arquivo": { "type": "string" },
+        "trecho": { "type": "string" },
+        "observacao": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "respostas": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/reply" }
+        }
+      }
+    },
+    "reply": {
+      "type": "object",
+      "required": ["autor", "resposta", "timestamp"],
+      "properties": {
+        "autor": { "type": "string" },
+        "resposta": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}
