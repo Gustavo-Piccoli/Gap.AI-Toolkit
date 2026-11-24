@@ -147,7 +147,7 @@ foreach ($r in $LocalRules) { $AllRules.Add($r) }
 # ---------------------------------------------------------------------------
 # Selecao de arquivos
 # ---------------------------------------------------------------------------
-function Get-CandidateFiles {
+function Get-CandidateFile {
     param([string]$Root)
 
     $files = $null
@@ -171,7 +171,7 @@ $ConcatJoinRegex = [regex]"(['""])\s*\+?\s*\1"
 $Violations = New-Object System.Collections.Generic.List[object]
 $ScannedCount = 0
 
-foreach ($RelativePath in (Get-CandidateFiles -Root $ResolvedRoot)) {
+foreach ($RelativePath in (Get-CandidateFile -Root $ResolvedRoot)) {
     if ($IncludePaths.Count -gt 0 -and ($IncludePaths -notcontains $RelativePath)) { continue }
 
     $FullPath = Join-Path $ResolvedRoot $RelativePath

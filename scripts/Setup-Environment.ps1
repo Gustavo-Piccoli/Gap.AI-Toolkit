@@ -21,7 +21,7 @@ param(
     [string]$ToolkitRoot = "",
 
     [Parameter(Mandatory = $false)]
-    [switch]$RemoveLegacyGustavoSkills = $true
+    [bool]$RemoveLegacyGustavoSkills = $true
 )
 
 Set-StrictMode -Version Latest
