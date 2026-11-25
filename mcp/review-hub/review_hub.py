@@ -212,9 +212,9 @@ def clear_thread(path: Path | None = None) -> None:
 # Servidor MCP
 # ---------------------------------------------------------------------------
 def create_server() -> Any:
-    from mcp.server.fastmcp import FastMCP
+    from mcp.server.mcpserver import MCPServer
 
-    server = FastMCP("CodeReviewHub")
+    server = MCPServer("CodeReviewHub")
 
     @server.tool()
     def registrar_apontamento(autor: str, arquivo: str, linha_ou_trecho: str, observacao: str) -> str:

@@ -8,6 +8,9 @@ All notable changes to this project are documented here. The format follows [Kee
 - Demo GIF of a `review-hub` session in both READMEs (`docs/assets/demo.gif`).
 
 ### Changed
+- `review-hub` migrated to the `mcp` 2.x SDK: `FastMCP` became `MCPServer` (`mcp.server.mcpserver`), and `mcp` is pinned to `2.3.0` in `pyproject.toml` and `requirements.txt`. Existing installs must reinstall the requirements. Tool names, arguments and outputs are unchanged.
+- `review-hub` tests call the tools through an in-memory MCP `Client`, exercising the full protocol instead of the server object directly.
+- `Setup-Environment.ps1` checks for `mcp.server.mcpserver`, so it warns when the selected interpreter still has `mcp` 1.x.
 - Installation docs create a virtual environment in `mcp/review-hub/.venv`, and `Setup-Environment.ps1` prefers its Python for `review-hub`, warning when the selected interpreter lacks the `mcp` package.
 - README documents that `Setup-Environment.ps1` rewrites `~/.claude/CLAUDE.md`, so existing instructions belong in an overlay.
 - `Setup-Environment.ps1` no longer touches legacy `gustavo-*` skills by default; pass `-RemoveLegacyGustavoSkills $true` to retire them.

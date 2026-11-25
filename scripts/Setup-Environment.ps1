@@ -143,7 +143,7 @@ function Test-PythonHasMcpPackage {
     Push-Location -LiteralPath ([System.IO.Path]::GetTempPath())
     try {
         $ErrorActionPreference = 'Continue'
-        $null = & $PythonExe -c "import mcp.server.fastmcp" 2>$null
+        $null = & $PythonExe -c "import mcp.server.mcpserver" 2>$null
         return ($LASTEXITCODE -eq 0)
     }
     catch {
@@ -520,7 +520,7 @@ $venvPython = Join-Path $ToolkitRoot "mcp\review-hub\.venv\Scripts\python.exe"
 
 $pythonExe = Resolve-PythonExecutable -VenvPython $venvPython -ConfigFiles @($agMcpConfigPath, $claudeJsonPath)
 if (-not (Test-PythonHasMcpPackage -PythonExe $pythonExe)) {
-    Write-Host "      Aviso: o pacote 'mcp' nao foi encontrado em '$pythonExe'; o review-hub nao vai iniciar." -ForegroundColor Yellow
+    Write-Host "      Aviso: o pacote 'mcp' 2.x nao foi encontrado em '$pythonExe'; o review-hub nao vai iniciar." -ForegroundColor Yellow
     Write-Host "      Crie a venv: python -m venv mcp\review-hub\.venv e depois mcp\review-hub\.venv\Scripts\python -m pip install -r mcp\review-hub\requirements.txt" -ForegroundColor Yellow
 }
 

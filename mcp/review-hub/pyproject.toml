@@ -5,13 +5,12 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "review-hub"
 version = "0.1.0"
-description = "CodeReviewHub: MCP server (FastMCP) for structured multi-agent code review threads."
+description = "CodeReviewHub: MCP server (MCPServer, mcp 2.x) for structured multi-agent code review threads."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 authors = [{ name = "Gustavo Auad Piccoli" }]
-# mcp 2.x renamed FastMCP; keep the 1.x line pinned until the migration is done.
-dependencies = ["mcp==1.30.0"]
+dependencies = ["mcp==2.3.0"]
 
 [project.optional-dependencies]
 dev = ["pytest==9.1.1", "ruff==0.17.6"]

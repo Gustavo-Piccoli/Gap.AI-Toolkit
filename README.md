@@ -15,7 +15,7 @@
 
 ## Destaque: servidor MCP `review-hub`
 
-O código mais verificável do repositório é o [`mcp/review-hub/review_hub.py`](./mcp/review-hub/review_hub.py), um servidor **Model Context Protocol** em Python (FastMCP). Ele dá a dois agentes (por exemplo, Claude Code como implementador e Antigravity como revisor) uma thread de revisão compartilhada, com 4 tools: registrar apontamento, responder, ler e limpar.
+O código mais verificável do repositório é o [`mcp/review-hub/review_hub.py`](./mcp/review-hub/review_hub.py), um servidor **Model Context Protocol** em Python (`MCPServer`, do SDK `mcp` 2.x). Ele dá a dois agentes (por exemplo, Claude Code como implementador e Antigravity como revisor) uma thread de revisão compartilhada, com 4 tools: registrar apontamento, responder, ler e limpar.
 
 - **Seguro com vários agentes ao mesmo tempo:** lock de arquivo entre processos (Windows e POSIX) e escrita atômica (`tempfile` + `fsync` + `os.replace`).
 - **Sem perda silenciosa de dados:** JSON corrompido gera erro explícito e o arquivo não é tocado.
@@ -84,7 +84,7 @@ Exemplo fictício completo em [`examples/todo-api-rate-limit/`](./examples/todo-
 | `scripts/` (bootstrap, vínculo de workspaces, scanner de dados sensíveis, hook) | graphify (pacote `graphifyy` no PyPI), usado pela regra "Graphify First" |
 | `adapters/` (templates de configuração) | [spec-kit](https://github.com/github/spec-kit) e agentchattr, usados pela `gap-fluxo` |
 | | caveman (skill de saída comprimida) e `cswap` (troca de contas), usado pela `gap-switch-claude` |
-| | [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk) (`FastMCP`), base do `review-hub` |
+| | [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk) (`MCPServer`, 2.x), base do `review-hub` |
 
 O catálogo do que o bootstrap espera encontrar está em [`adapters/extensions.json`](./adapters/extensions.json). As descrições lá são das próprias ferramentas.
 

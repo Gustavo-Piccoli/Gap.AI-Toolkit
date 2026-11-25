@@ -1,6 +1,6 @@
 # Review Hub MCP (`CodeReviewHub`)
 
-Servidor MCP (Model Context Protocol) leve, construído em Python com `FastMCP`, projetado para viabilizar sessões estruturadas de **Code Review multi-agente** (por exemplo, debates técnicos cruzados entre **Claude Code** e **Google Antigravity**).
+Servidor MCP (Model Context Protocol) leve, construído em Python com o `MCPServer` do SDK `mcp` 2.x, projetado para viabilizar sessões estruturadas de **Code Review multi-agente** (por exemplo, debates técnicos cruzados entre **Claude Code** e **Google Antigravity**).
 
 ## Propósito e Funcionamento
 
@@ -10,7 +10,7 @@ Em fluxos com mais de um agente de IA, um agente atua como **Autor/Implementador
 - Vários agentes podem ler e escrever a mesma thread ao mesmo tempo: toda escrita roda sob **lock de arquivo** entre processos e é **atômica** (arquivo temporário + `fsync` + `os.replace`).
 - IDs são alocados por `max(id) + 1`, então continuam únicos mesmo depois de edições manuais no arquivo.
 - Um JSON corrompido gera **erro explícito** com o caminho do arquivo e nunca é sobrescrito em silêncio.
-- Não depende de serviços externos nem de banco de dados: só Python 3.10+ e o pacote `mcp` (fixado em `1.30.0`; a linha 2.x renomeou o `FastMCP`).
+- Não depende de serviços externos nem de banco de dados: só Python 3.10+ e o pacote `mcp` (fixado em `2.3.0`). Ao atualizar uma instalação feita com a `1.30.0`, rode `pip install -r requirements.txt` de novo: na linha 2.x, o `FastMCP` passou a se chamar `MCPServer`.
 
 O formato do arquivo está documentado em [`docs/review-hub-format.md`](../../docs/review-hub-format.md), com um [JSON Schema](../../docs/review-hub.schema.json) e um [exemplo](../../examples/todo-api-rate-limit/review-thread.json).
 

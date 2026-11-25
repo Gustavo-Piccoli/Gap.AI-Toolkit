@@ -17,7 +17,7 @@
 
 ## Highlight: the `review-hub` MCP server
 
-The most verifiable code in this repo is [`mcp/review-hub/review_hub.py`](./mcp/review-hub/review_hub.py), a Python **Model Context Protocol** server built on FastMCP. It gives two agents (for example, Claude Code as implementer and Antigravity as reviewer) a shared review thread through 4 tools: register a finding, reply, read and clear.
+The most verifiable code in this repo is [`mcp/review-hub/review_hub.py`](./mcp/review-hub/review_hub.py), a Python **Model Context Protocol** server built on `MCPServer` from the `mcp` 2.x SDK. It gives two agents (for example, Claude Code as implementer and Antigravity as reviewer) a shared review thread through 4 tools: register a finding, reply, read and clear.
 
 - **Safe with concurrent agents:** cross-process file lock (Windows and POSIX) and atomic writes (`tempfile` + `fsync` + `os.replace`).
 - **No silent data loss:** corrupted JSON raises an explicit error and the file is left untouched.
@@ -86,7 +86,7 @@ A complete fictional example lives in [`examples/todo-api-rate-limit/`](./exampl
 | `scripts/` (bootstrap, workspace linking, sensitive-data scanner, hook) | graphify (`graphifyy` on PyPI), used by the "Graphify First" rule |
 | `adapters/` (configuration templates) | [spec-kit](https://github.com/github/spec-kit) and agentchattr, used by `gap-fluxo` |
 | | caveman (compressed-output skill) and `cswap` (account switcher), used by `gap-switch-claude` |
-| | [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk) (`FastMCP`), the base of `review-hub` |
+| | [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk) (`MCPServer`, 2.x), the base of `review-hub` |
 
 The catalog of what the bootstrap expects to find is [`adapters/extensions.json`](./adapters/extensions.json); its descriptions come from the tools themselves.
 

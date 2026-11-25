@@ -77,7 +77,7 @@
       "name": "review-hub",
       "type": "stdio",
       "bundledPath": "mcp/review-hub/review_hub.py",
-      "description": "Servidor FastMCP local para debates estruturados de Code Review multi-agente, persistindo threads em ~/.review_thread.json."
+      "description": "Servidor MCP local (MCPServer, mcp 2.x) para debates estruturados de Code Review multi-agente, persistindo threads em ~/.review_thread.json."
     },
     {
       "name": "agentchattr",

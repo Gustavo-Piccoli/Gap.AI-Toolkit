@@ -7,6 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pytest
+from mcp.client import Client
 
 import review_hub as hub
 
@@ -19,11 +20,15 @@ def storage(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 
 def _call_tool(name: str, **arguments: object) -> str:
-    server = hub.create_server()
-    result = asyncio.run(server.call_tool(name, arguments))
-    # FastMCP 1.x devolve (conteudo, estruturado) ou so a lista de conteudo.
-    content = result[0] if isinstance(result, tuple) else result
-    return content[0].text
+    """Chama a tool por um cliente MCP em memoria, passando pelo protocolo completo."""
+
+    async def run() -> str:
+        async with Client(hub.create_server()) as client:
+            result = await client.call_tool(name, arguments)
+        assert not result.is_error, result
+        return result.content[0].text
+
+    return asyncio.run(run())
 
 
 # --- criacao e listagem -----------------------------------------------------
