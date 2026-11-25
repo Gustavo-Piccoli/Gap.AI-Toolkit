@@ -16,6 +16,7 @@ All notable changes to this project are documented here. The format follows [Kee
 - `Setup-Environment.ps1` no longer touches legacy `gustavo-*` skills by default; pass `-RemoveLegacyGustavoSkills $true` to retire them.
 
 ### Fixed
+- `Setup-Environment.ps1` escapes spaces (`\ `) in the `@import` of `rules/AGENTS.md` it writes to `~/.claude/CLAUDE.md`; Claude Code ends an import path at the first space, so the rules were silently not loaded when the clone lived in a folder with spaces in its path.
 - `Setup-Environment.ps1` registers `review-hub` in the root `mcpServers` of `~/.claude.json`; it used to insert it into the first project-scoped `mcpServers`, making the server available in a single folder only.
 - `Setup-Environment.ps1` registers `review-hub` when `~/.gemini/config/mcp_config.json` exists but is empty.
 - `Setup-Environment.ps1` moves legacy `gustavo-*` skill folders to `skills-legacy-backup/<timestamp>` instead of deleting them permanently.

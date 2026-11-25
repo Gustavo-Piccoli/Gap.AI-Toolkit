@@ -463,7 +463,8 @@ if (-not (Test-Path -LiteralPath $claudeDir)) {
     $null = New-Item -ItemType Directory -Path $claudeDir -Force
 }
 
-$agentsRuleForwardSlash = ((Join-Path $ToolkitRoot "rules\AGENTS.md") -replace '\\', '/')
+# No @import do Claude Code o caminho termina no primeiro espaco; um espaco precisa de barra invertida antes.
+$agentsRuleForwardSlash = ((Join-Path $ToolkitRoot "rules\AGENTS.md") -replace '\\', '/' -replace ' ', '\ ')
 $claudeMdLines = New-Object System.Collections.Generic.List[string]
 $claudeMdLines.Add("# Instrucoes Globais do Usuario")
 $claudeMdLines.Add("")
